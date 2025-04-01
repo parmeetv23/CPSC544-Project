@@ -197,8 +197,8 @@ dt = DecisionTreeClassifier(random_state=42)
 ga = GeneticAlgorithm(
     modelToTune=dt,
     param_space=param_space,
-    population_size=1,
-    generations=1,
+    population_size=300,
+    generations=30,
     crossover_prob=0.85,
     mutation_prob=0.4,
     tournament_size=10,
@@ -364,8 +364,8 @@ class logGA(GeneticAlgorithm):
 ga_logreg = logGA(
     modelToTune=LogisticRegression(random_state=42),
     param_space=logreg_param_space,
-    population_size=1,
-    generations=1,
+    population_size=300,
+    generations=30,
     cv=5,
     scoring='accuracy',
     verbose=1,
