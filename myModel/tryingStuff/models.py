@@ -11,7 +11,7 @@ class GeneticAlgorithm(BaseEstimator, MetaEstimatorMixin):
     def __init__(self, modelToTune, param_space, 
                  population_size=100, generations=1000, 
                  crossover_prob=0.8, mutation_prob=0.2,
-                 tournament_size=15, cv=5, scoring='accuracy',
+                 tournament_size=5, cv=5, scoring='accuracy',
                  n_jobs=None, verbose=0, random_state=None):
         self.modelToTune = modelToTune #actual model
         self.param_space = param_space #parameters
@@ -40,8 +40,6 @@ class GeneticAlgorithm(BaseEstimator, MetaEstimatorMixin):
                 individual[param] = random.choice(values)
             elif callable(values):
                 individual[param] = values()
-            else:
-                raise ValueError(f"Invalid parameter range for {param}") #something went wrong
         return individual
     
     def _initialize_population(self):
@@ -197,8 +195,8 @@ dt = DecisionTreeClassifier(random_state=42)
 ga = GeneticAlgorithm(
     modelToTune=dt,
     param_space=param_space,
-    population_size=300,
-    generations=30,
+    population_size=1,
+    generations=1,
     crossover_prob=0.85,
     mutation_prob=0.4,
     tournament_size=10,
@@ -364,8 +362,8 @@ class logGA(GeneticAlgorithm):
 ga_logreg = logGA(
     modelToTune=LogisticRegression(random_state=42),
     param_space=logreg_param_space,
-    population_size=300,
-    generations=30,
+    population_size=1,
+    generations=1,
     cv=5,
     scoring='accuracy',
     verbose=1,
@@ -387,6 +385,69 @@ print(f"Test Accuracy: {ga_logreg.bestModel.score(X_test, y_test_binary):.4f}")
 print("\nFeature Coefficients:")
 for name, coef in zip(diabetes.feature_names, ga_logreg.bestModel.coef_[0]):
     print(f"{name:>8}: {coef:>10.4f}")
+
+
+
+
+# Support Vector Machine (SVM) Model#####################################################################
+from sklearn.svm import SVC
+
+svm_param_space = {
+    'C': np.logspace(-5, 3, 15), 
+    'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+    'gamma': ['scale', 'auto'],
+    'degree': range(2, 10),  
+    'coef0': np.linspace(0, 1, 5), 
+    'shrinking': [True, False], 
+    'tol': np.logspace(-5, -1, 5)  
+}
+
+
+svm = SVC(random_state=42)
+
+ga_svm = GeneticAlgorithm(
+    modelToTune=svm,
+    param_space=svm_param_space,
+    population_size=100,
+    generations=30,
+    crossover_prob=0.8,
+    mutation_prob=0.4,
+    cv=5,
+    scoring='accuracy',
+    verbose=1,
+    random_state=42
+)
+
+ga_svm.run(X_train, y_train_binary)
+
+print("\nBest parameters for SVM:")
+print(ga_svm.best_params_)
+print(f"\nBest cross-validation score for SVM: {ga_svm.best_score_:.4f}")
+
+test_score_svm = ga_svm.bestModel.score(X_test, y_test_binary)
+print(f"\nTest set accuracy for SVM: {test_score_svm:.4f}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
