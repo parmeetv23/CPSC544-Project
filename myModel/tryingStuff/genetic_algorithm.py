@@ -28,7 +28,9 @@ class GeneticAlgorithm(BaseEstimator, MetaEstimatorMixin):
         self.random_state = random_state
         self.best_params_ = [] #list of best parameters
         self.best_score_ = None #best score so far
+        self.best_estimator_ = None #best model so far
         self.history_ = []
+        
         
         if random_state is not None:
             np.random.seed(random_state)
@@ -108,6 +110,7 @@ class GeneticAlgorithm(BaseEstimator, MetaEstimatorMixin):
             if self.best_score_ is None or current_best_score > self.best_score_:
                 self.best_score_ = current_best_score
                 self.best_params_ = current_best_params.copy()
+                
             
             self.history_.append({
                 'generation': gen,
@@ -145,11 +148,10 @@ class GeneticAlgorithm(BaseEstimator, MetaEstimatorMixin):
             
             population = new_population
         
-        self.bestModel = self.modelToTune.set_params(**self.best_params_)
-        self.bestModel.fit(X, y)
+        self.best_estimator_ = self.modelToTune.set_params(**self.best_params_)
+        self.best_estimator_.fit(X, y)
         
         return self
-
 
 
 class logGA(GeneticAlgorithm):
@@ -231,3 +233,38 @@ class logGA(GeneticAlgorithm):
             return np.mean(scores)
         except:
             return -np.inf
+        
+        
+class NNGABase(GeneticAlgorithm):
+    def _initialize_individual(self):
+        individual = {}
+        
+        # Deal with special params
+        for param, config in self.param_space.items():
+            if param == 'hidden_layer_sizes':
+                individual[param] = random.choice(config['values'])
+            else:
+                individual[param] = random.choice(config) if isinstance(config, list) else config
+        
+        return individual
+    
+
+    
+    def _mutate(self, individual):
+        """Mutation with special handling for NN parameters"""
+        mutated = individual.copy()
+        param_to_mutate = random.choice(list(self.param_space.keys()))
+        
+        if param_to_mutate == 'hidden_layer_sizes':
+            current = mutated[param_to_mutate]
+            options = [v for v in self.param_space[param_to_mutate]['values'] if v != current]
+            if options:
+                mutated[param_to_mutate] = random.choice(options)
+        else:
+            current = mutated[param_to_mutate]
+            options = [v for v in self.param_space[param_to_mutate] if v != current]
+            if options:
+                mutated[param_to_mutate] = random.choice(options)
+        
+        return mutated
+    
